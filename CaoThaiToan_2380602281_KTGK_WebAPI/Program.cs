@@ -291,16 +291,35 @@ static string ConvertPostgresUrlToNpgsql(string connectionString)
     {
         try
         {
-            var uri = new Uri(trimmed);
-            var userInfo = uri.UserInfo.Split(':');
-            var username = Uri.UnescapeDataString(userInfo[0]);
-            var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
-            var host = uri.Host;
-            var port = uri.Port > 0 ? uri.Port : 5432;
-            var database = uri.AbsolutePath.TrimStart('/');
-            if (string.IsNullOrEmpty(database)) database = "postgres";
+            var prefix = trimmed.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) 
+                ? "postgresql://" 
+                : "postgres://";
+            var withoutPrefix = trimmed.Substring(prefix.Length);
 
-            return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
+            var lastAt = withoutPrefix.LastIndexOf('@');
+            if (lastAt > 0)
+            {
+                var userInfoPart = withoutPrefix.Substring(0, lastAt);
+                var hostPart = withoutPrefix.Substring(lastAt + 1);
+
+                var userColon = userInfoPart.IndexOf(':');
+                var username = userColon >= 0 ? userInfoPart.Substring(0, userColon) : userInfoPart;
+                var rawPassword = userColon >= 0 ? userInfoPart.Substring(userColon + 1) : "";
+                var password = Uri.UnescapeDataString(rawPassword);
+
+                var slashIndex = hostPart.IndexOf('/');
+                var hostAndPort = slashIndex >= 0 ? hostPart.Substring(0, slashIndex) : hostPart;
+                var dbAndQuery = slashIndex >= 0 ? hostPart.Substring(slashIndex + 1) : "postgres";
+                var questionIndex = dbAndQuery.IndexOf('?');
+                var database = questionIndex >= 0 ? dbAndQuery.Substring(0, questionIndex) : dbAndQuery;
+                if (string.IsNullOrWhiteSpace(database)) database = "postgres";
+
+                var colonIndex = hostAndPort.IndexOf(':');
+                var host = colonIndex >= 0 ? hostAndPort.Substring(0, colonIndex) : hostAndPort;
+                var port = colonIndex >= 0 && int.TryParse(hostAndPort.Substring(colonIndex + 1), out var p) ? p : 5432;
+
+                return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
+            }
         }
         catch
         {
