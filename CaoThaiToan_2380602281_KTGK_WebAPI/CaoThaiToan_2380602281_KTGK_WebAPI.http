@@ -1,0 +1,6 @@
+@CaoThaiToan_2380602281_KTGK_WebAPI_HostAddress = http://localhost:5200
+
+GET {{CaoThaiToan_2380602281_KTGK_WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
