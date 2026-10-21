@@ -3,6 +3,8 @@ using CaoThaiToan_2380602281_KTGK_WebAPI.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -96,8 +98,23 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    // Tự động kiểm tra và tạo toàn bộ bảng trong Supabase PostgreSQL hoặc SQL Server nếu chưa có
-    await db.Database.EnsureCreatedAsync();
+    // Tự động kiểm tra và tạo toàn bộ bảng trong Supabase PostgreSQL hoặc SQL Server
+    var dbCreator = db.Database.GetService<IDatabaseCreator>() as IRelationalDatabaseCreator;
+    if (dbCreator != null)
+    {
+        try
+        {
+            await dbCreator.CreateTablesAsync();
+        }
+        catch
+        {
+            // Bảng đã tồn tại
+        }
+    }
+    else
+    {
+        await db.Database.EnsureCreatedAsync();
+    }
 
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
