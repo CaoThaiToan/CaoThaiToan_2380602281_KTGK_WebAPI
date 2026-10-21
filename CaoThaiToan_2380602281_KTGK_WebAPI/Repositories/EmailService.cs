@@ -66,6 +66,7 @@ namespace CaoThaiToan_2380602281_KTGK_WebAPI.Repositories
                 email.Body = builder.ToMessageBody();
 
                 using var smtp = new SmtpClient();
+                smtp.Timeout = 4000;
                 await smtp.ConnectAsync(host, port, SecureSocketOptions.StartTls);
                 await smtp.AuthenticateAsync(user, pass);
                 await smtp.SendAsync(email);

@@ -89,8 +89,15 @@ namespace CaoThaiToan_2380602281_KTGK_WebAPI.Controllers
             user.OtpExpiry = DateTime.UtcNow.AddMinutes(5); // Mã OTP có hạn 5 phút
             await _userManager.UpdateAsync(user);
 
-            // Gửi OTP qua Email
-            await _emailService.SendOtpEmailAsync(user.Email ?? $"{user.UserName}@gmail.com", otpCode, user.UserName ?? "User");
+            // Gửi OTP qua Email trong nền để API phản hồi tức thì
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendOtpEmailAsync(user.Email ?? $"{user.UserName}@gmail.com", otpCode, user.UserName ?? "User");
+                }
+                catch { }
+            });
 
             return Ok(new
             {
