@@ -12,6 +12,13 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Hỗ trợ cổng biến môi trường PORT của Render
+var renderPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(renderPort))
+{
+    builder.WebHost.UseUrls($"http://*:{renderPort}");
+}
+
 // 1. Cấu hình DbContext kết nối Supabase (PostgreSQL) hoặc SQL Server
 var supabaseConn = builder.Configuration.GetConnectionString("SupabaseConnection")
                    ?? Environment.GetEnvironmentVariable("SUPABASE_CONNECTION")
